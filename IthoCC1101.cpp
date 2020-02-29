@@ -345,7 +345,7 @@ void  IthoCC1101::initReceiveMessage2(IthoMessageType expectedMessageType)
 	writeCommand(CC1101_SIDLE);	//idle
 
 	//set datarate
-	writeRegister(CC1101_MDMCFG4 ,0x9A); // set kBaud
+	writeRegister(CC1101_MDMCFG4 ,0x5A); // set kBaud (0x9A for newer models (>2011))
 	writeRegister(CC1101_MDMCFG3 ,0x83); // set kBaud
 	writeRegister(CC1101_DEVIATN ,0x50);
 
@@ -355,8 +355,7 @@ void  IthoCC1101::initReceiveMessage2(IthoMessageType expectedMessageType)
 
 	//set fifo mode with fixed packet length and sync bytes
 	writeRegister(CC1101_PKTCTRL0 ,0x00);
-//	writeRegister(CC1101_SYNC1 ,170);			//message2 byte6
-	writeRegister(CC1101_SYNC1 ,172);			//message2 byte6
+	writeRegister(CC1101_SYNC1 ,170);			//message2 byte6 (172 for newer models (> 2011))
 	writeRegister(CC1101_SYNC0 ,171);			//message2 byte7
 	writeRegister(CC1101_MDMCFG2 ,0x02);
 	writeRegister(CC1101_PKTCTRL1 ,0x00);
