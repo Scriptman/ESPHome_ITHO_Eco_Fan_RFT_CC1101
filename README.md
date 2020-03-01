@@ -64,7 +64,7 @@ fan:
 ```
 
 ## ESPHome Configuration
-I created a new device in Home Assistant ESPHome addon (named itho_eco_fan), and choose patform "ESP8266" and board "d1_mini_pro". After that, I changed the YAML of that device to look like this:
+I created a new device in Home Assistant ESPHome addon (named itho_eco_fan), and choose platform "ESP8266" and board "d1_mini_pro", I think "nodemcuv2" will work too. After that, I changed the YAML of that device to look like this: *DO'NT COPILE THE SOURCE YET!* Just save the YAML config and continue!
 
 ```
 esphome:
@@ -172,7 +172,7 @@ text_sensor:
     - name: "FanTimer"
 ```
 
-## Add the cc1101.h file (interface class to the CC1101 library)
+## Add the cc1101.h file (interface class to include/use the CC1101 library)
 You're almost done! With the "Home Assistant Configurator" I navigate to the folder `esphome/itho_eco_fan`. Create the folder `itho` and go into the folder. Create the file `cc1101.h` and add the following contents to the file:
 
 ```
