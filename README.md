@@ -21,7 +21,7 @@ CC11xx pins    ESP pins Arduino pins  Description
 *  4 - SCK        14=D5    Pin 13        Clock pin
 *  5 - MISO/GDO1  12=D6    Pin 12        Data output from CC11xx / serial clock from CC11xx
 *  6 - GDO2       04=D1    Pin  2        Programmable output
-*  7 - GDO0       ?        Pin  ?        Programmable output
+*  7 - GDO0       ?        Pin  ?        Programmable output (NOT CONNECTED)
 *  8 - CSN        15=D8    Pin 10        Chip select / (SPI_SS)
 ```
 
