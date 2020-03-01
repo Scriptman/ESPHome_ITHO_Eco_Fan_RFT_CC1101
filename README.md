@@ -420,7 +420,7 @@ Congrats! Your Itho Eco Fan Controller is connected to your Home Assistant, but 
   3. Connect the Itho Eco Fan to your power net.
   4. Within +/- 20 seconds (as soon as you can), click on the switch behind "FanSendJoin".
   
-If everything went right, which never happens the first 30 times, then your device should be connected to your Itho Eco Fan. Somethimes the fan goes into mode "2/Medium" when pairing, to let you know the pairing process went right.
+If everything went right, which never happens the first 30 times, then your device should be connected to your Itho Eco Fan. Sometimes the fan goes into mode "2/Medium" when pairing, to let you know the pairing process went right.
 
 ## Have fun! Having problems?
 https://gathering.tweakers.net/forum/list_messages/1690945
