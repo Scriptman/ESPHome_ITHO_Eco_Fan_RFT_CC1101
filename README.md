@@ -64,7 +64,9 @@ fan:
 ```
 
 ## ESPHome Configuration
-I created a new device in Home Assistant ESPHome addon (named itho_eco_fan), and choose platform "ESP8266" and board "d1_mini_pro", I think "nodemcuv2" will work too. After that, I changed the YAML of that device to look like this: *DO'NT COPILE THE SOURCE YET!* Just save the YAML config and continue!
+I created a new device in Home Assistant ESPHome addon (named itho_eco_fan), and choose platform "ESP8266" and board "d1_mini_pro", I think "nodemcuv2" will work too. After that, I changed the YAML of that device to look like this: 
+
+**DO'NT COMPILE THE SOURCE YET!** Just save the YAML config and continue!
 
 ```
 esphome:
