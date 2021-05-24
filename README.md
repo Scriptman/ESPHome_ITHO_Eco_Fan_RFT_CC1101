@@ -264,6 +264,8 @@ String TextSensorfromState(int currentState)
     	case 4: 
     		return "Full";
     		break;
+        default:
+            return "Unknown";
     	}
 }
 

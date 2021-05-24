@@ -433,7 +433,7 @@ void IthoCC1101::parseMessageCommand()
 
 void IthoCC1101::sendCommand(IthoCommand command)
 {
-	//CC1101Packet outMessage1;
+	CC1101Packet outMessage1;
 	CC1101Packet outMessage2;
 	uint8_t maxTries = sendTries;
 	uint8_t delaytime = 40;
@@ -445,7 +445,7 @@ void IthoCC1101::sendCommand(IthoCommand command)
 	outIthoPacket.counter += 1;
 
 	//get message1 bytes
-	//createMessageStart(&outIthoPacket, &outMessage1);
+	createMessageStart(&outIthoPacket, &outMessage1);
 
 	//get message2 bytes
 	switch (command)
@@ -469,11 +469,11 @@ void IthoCC1101::sendCommand(IthoCommand command)
 	//send messages
 	for (int i=0;i<maxTries;i++)
 	{
-		/*message1
+		message1
 		initSendMessage1();
 		sendData(&outMessage1);
 
-		delay(4);*/ // delay between message1/2
+		delay(4); // delay between message1/2
 
 		//message2
 		initSendMessage2(outIthoPacket.command);
