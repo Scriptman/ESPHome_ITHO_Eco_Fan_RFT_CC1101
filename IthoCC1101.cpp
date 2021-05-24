@@ -469,7 +469,7 @@ void IthoCC1101::sendCommand(IthoCommand command)
 	//send messages
 	for (int i=0;i<maxTries;i++)
 	{
-		message1
+		//message1
 		initSendMessage1();
 		sendData(&outMessage1);
 
