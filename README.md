@@ -7,7 +7,7 @@ Trying to get ESPHome to mimic what is comprised in
  - https://github.com/jodur/ESPEASY_Plugin_ITHO/blob/master/_P145_Itho.ino
  - https://github.com/adri/IthoEcoFanRFT / https://github.com/supersjimmie/IthoEcoFanRFT
  
-Code is optimized for Itho CVE Eco-fan 2. For newer fans, please see the IthoCC1101.cpp file and search for "> 2011" and make the changes as described. Not 100% tested.
+Code is optimized for Itho CVE Eco-fan 2. For newer fans, please see the IthoCC1101.cpp file and search for "> 2011" and make the changes as described.
 
 
 ## Wiring schema used:

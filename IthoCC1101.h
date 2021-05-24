@@ -59,7 +59,7 @@ const uint8_t counterBytes66[] = {170,106};
 
 
 //state machine
-enum IthoReceiveStates
+typedef enum IthoReceiveStates
 {
 	ExpectMessageStart,
 	ExpectNormalCommand,

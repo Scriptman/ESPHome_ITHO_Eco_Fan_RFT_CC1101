@@ -6,7 +6,7 @@
 #define ITHOPACKET_H_
 
 
-enum IthoMessageType
+typedef enum IthoMessageType
  {
  	ithomsg_unknown = 0,
  	ithomsg_control = 1,

@@ -88,7 +88,7 @@ void IthoCC1101::initSendMessage1()
 	writeRegister(CC1101_CHANNR ,0x00);		//00000000
 	writeRegister(CC1101_DEVIATN ,0x40);	//01000000
 	writeRegister(CC1101_FREND0 ,0x17);		//00010111	use index 7 in PA table
-	writeRegister(CC1101_MCSM0 ,0x18);		//00011000	PO timeout Approx. 146�s - 171�s, Auto calibrate When going from IDLE to RX or TX (or FSTXON)
+	writeRegister(CC1101_MCSM0 ,0x18);		//00011000	PO timeout Approx. 146µs - 171µs, Auto calibrate When going from IDLE to RX or TX (or FSTXON)
 	writeRegister(CC1101_FSCAL3 ,0xA9);		//10101001
 	writeRegister(CC1101_FSCAL2 ,0x2A);		//00101010
 	writeRegister(CC1101_FSCAL1 ,0x00);		//00000000
@@ -176,7 +176,7 @@ void IthoCC1101::initSendMessage2(IthoCommand command)
 	writeRegister(CC1101_CHANNR ,0x00);		//00000000
 	writeRegister(CC1101_DEVIATN ,0x50);	//difference compared to message1
 	writeRegister(CC1101_FREND0 ,0x17);		//00010111	use index 7 in PA table
-	writeRegister(CC1101_MCSM0 ,0x18);		//00011000	PO timeout Approx. 146�s - 171�s, Auto calibrate When going from IDLE to RX or TX (or FSTXON)
+	writeRegister(CC1101_MCSM0 ,0x18);		//00011000	PO timeout Approx. 146µs - 171µs, Auto calibrate When going from IDLE to RX or TX (or FSTXON)
 	writeRegister(CC1101_FSCAL3 ,0xA9);		//10101001
 	writeRegister(CC1101_FSCAL2 ,0x2A);		//00101010
 	writeRegister(CC1101_FSCAL1 ,0x00);		//00000000
@@ -301,7 +301,7 @@ void IthoCC1101::initReceive()
 	writeRegister(CC1101_AGCCTRL2 ,0x43);
 	writeRegister(CC1101_AGCCTRL1 ,0x40);
 	writeRegister(CC1101_AGCCTRL0 ,0x91);
-	writeRegister(CC1101_FSCAL3 ,0xA9);                    // For newer models 0xE9 (> 2011))
+	writeRegister(CC1101_FSCAL3 ,0xA9);
 	writeRegister(CC1101_FSCAL2 ,0x2A);
 	writeRegister(CC1101_FSCAL1 ,0x00);
 	writeRegister(CC1101_FSCAL0 ,0x11);                    // For newer models 0x1F (> 2011))
@@ -355,7 +355,7 @@ void  IthoCC1101::initReceiveMessage2(IthoMessageType expectedMessageType)
 
 	//set fifo mode with fixed packet length and sync bytes
 	writeRegister(CC1101_PKTCTRL0 ,0x00);
-	writeRegister(CC1101_SYNC1 ,170);			//message2 byte6 (172 for newer models (> 2011))
+	writeRegister(CC1101_SYNC1 ,170);			//message2 byte6
 	writeRegister(CC1101_SYNC0 ,171);			//message2 byte7
 	writeRegister(CC1101_MDMCFG2 ,0x02);
 	writeRegister(CC1101_PKTCTRL1 ,0x00);
@@ -433,7 +433,7 @@ void IthoCC1101::parseMessageCommand()
 
 void IthoCC1101::sendCommand(IthoCommand command)
 {
-	CC1101Packet outMessage1;
+	//CC1101Packet outMessage1;
 	CC1101Packet outMessage2;
 	uint8_t maxTries = sendTries;
 	uint8_t delaytime = 40;
@@ -445,7 +445,7 @@ void IthoCC1101::sendCommand(IthoCommand command)
 	outIthoPacket.counter += 1;
 
 	//get message1 bytes
-	createMessageStart(&outIthoPacket, &outMessage1);
+	//createMessageStart(&outIthoPacket, &outMessage1);
 
 	//get message2 bytes
 	switch (command)
@@ -469,11 +469,11 @@ void IthoCC1101::sendCommand(IthoCommand command)
 	//send messages
 	for (int i=0;i<maxTries;i++)
 	{
-		//message1
+		/*message1
 		initSendMessage1();
 		sendData(&outMessage1);
 
-		delay(4); // delay between message1/2
+		delay(4);*/ // delay between message1/2
 
 		//message2
 		initSendMessage2(outIthoPacket.command);
@@ -942,7 +942,7 @@ uint8_t* IthoCC1101::getMessage2CommandBytes(IthoCommand command)
 		case IthoLeave:
 			return (uint8_t*)&ithoMessage2LeaveCommandBytes[0];
 		default:
-			return (uint8_t*)&ithoMessage2LowCommandBytes[0];
+			return 0; //(uint8_t*)&ithoMessage2LowCommandBytes[0];
 	}
 }
 
