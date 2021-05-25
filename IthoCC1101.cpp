@@ -2,7 +2,7 @@
  * Author: Klusjesman, modified bij supersjimmie for Arduino/ESP8266
  */
 
-#define DEBUG 0
+#define DEBUG 1
 
 #define BYTE_TO_BINARY_PATTERN "%c,%c,%c,%c,%c,%c,%c,%c,"
 #define BYTE_TO_BINARY(byte)  \
