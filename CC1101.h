@@ -8,9 +8,9 @@
 #include <stdio.h>
 #include "CC1101Packet.h"
 #include <SPI.h>
-// On Arduino, SPI pins are predefined
+ // On Arduino, SPI pins are predefined
 
-/*	Type of transfers */
+ /*	Type of transfers */
 #define CC1101_WRITE_BURST						0x40
 #define CC1101_READ_SINGLE						0x80
 #define CC1101_READ_BURST						0xC0
@@ -120,88 +120,88 @@
 /* Marc states */
 enum CC1101MarcStates
 {
-	CC1101_MARCSTATE_SLEEP					= 0x00,
-	CC1101_MARCSTATE_IDLE					= 0x01,
-	CC1101_MARCSTATE_XOFF					= 0x02,
-	CC1101_MARCSTATE_VCOON_MC				= 0x03,
-	CC1101_MARCSTATE_REGON_MC				= 0x04,
-	CC1101_MARCSTATE_MANCAL					= 0x05,
-	CC1101_MARCSTATE_VCOON					= 0x06,
-	CC1101_MARCSTATE_REGON					= 0x07,
-	CC1101_MARCSTATE_STARTCAL				= 0x08,
-	CC1101_MARCSTATE_BWBOOST				= 0x09,
-	CC1101_MARCSTATE_FS_LOCK				= 0x0A,
-	CC1101_MARCSTATE_IFADCON				= 0x0B,
-	CC1101_MARCSTATE_ENDCAL					= 0x0C,
-	CC1101_MARCSTATE_RX						= 0x0D,
-	CC1101_MARCSTATE_RX_END					= 0x0E,
-	CC1101_MARCSTATE_RX_RST					= 0x0F,
-	CC1101_MARCSTATE_TXRX_SWITCH			= 0x10,
-	CC1101_MARCSTATE_RXFIFO_OVERFLOW		= 0x11,
-	CC1101_MARCSTATE_FSTXON					= 0x12,
-	CC1101_MARCSTATE_TX						= 0x13,
-	CC1101_MARCSTATE_TX_END					= 0x14,
-	CC1101_MARCSTATE_RXTX_SWITCH			= 0x15,
-	CC1101_MARCSTATE_TXFIFO_UNDERFLOW		= 0x16
+	CC1101_MARCSTATE_SLEEP = 0x00,
+	CC1101_MARCSTATE_IDLE = 0x01,
+	CC1101_MARCSTATE_XOFF = 0x02,
+	CC1101_MARCSTATE_VCOON_MC = 0x03,
+	CC1101_MARCSTATE_REGON_MC = 0x04,
+	CC1101_MARCSTATE_MANCAL = 0x05,
+	CC1101_MARCSTATE_VCOON = 0x06,
+	CC1101_MARCSTATE_REGON = 0x07,
+	CC1101_MARCSTATE_STARTCAL = 0x08,
+	CC1101_MARCSTATE_BWBOOST = 0x09,
+	CC1101_MARCSTATE_FS_LOCK = 0x0A,
+	CC1101_MARCSTATE_IFADCON = 0x0B,
+	CC1101_MARCSTATE_ENDCAL = 0x0C,
+	CC1101_MARCSTATE_RX = 0x0D,
+	CC1101_MARCSTATE_RX_END = 0x0E,
+	CC1101_MARCSTATE_RX_RST = 0x0F,
+	CC1101_MARCSTATE_TXRX_SWITCH = 0x10,
+	CC1101_MARCSTATE_RXFIFO_OVERFLOW = 0x11,
+	CC1101_MARCSTATE_FSTXON = 0x12,
+	CC1101_MARCSTATE_TX = 0x13,
+	CC1101_MARCSTATE_TX_END = 0x14,
+	CC1101_MARCSTATE_RXTX_SWITCH = 0x15,
+	CC1101_MARCSTATE_TXFIFO_UNDERFLOW = 0x16
 };
 
 
 /* Chip states */
 enum CC1101ChipStates
 {
-	CC1101_STATE_MASK                       = 0x70,
-	CC1101_STATE_IDLE                       = 0x00,
-	CC1101_STATE_RX                         = 0x10,
-	CC1101_STATE_TX                         = 0x20,
-	CC1101_STATE_FSTXON                     = 0x30,
-	CC1101_STATE_CALIBRATE                  = 0x40,
-	CC1101_STATE_SETTLING                   = 0x50,
-	CC1101_STATE_RX_OVERFLOW                = 0x60,
-	CC1101_STATE_TX_UNDERFLOW               = 0x70	
+	CC1101_STATE_MASK = 0x70,
+	CC1101_STATE_IDLE = 0x00,
+	CC1101_STATE_RX = 0x10,
+	CC1101_STATE_TX = 0x20,
+	CC1101_STATE_FSTXON = 0x30,
+	CC1101_STATE_CALIBRATE = 0x40,
+	CC1101_STATE_SETTLING = 0x50,
+	CC1101_STATE_RX_OVERFLOW = 0x60,
+	CC1101_STATE_TX_UNDERFLOW = 0x70
 };
 
 
 
 class CC1101
 {
-	protected:
-		
+protected:
+
 	//functions
-	public:
-		CC1101();
-		~CC1101();
-	
-		//spi
-		void spi_waitMiso();
-	
-		//cc1101
-		void init();
-		
-		uint8_t writeCommand(uint8_t command);
-		void writeRegister(uint8_t address, uint8_t data);
-		
-		uint8_t readRegister(uint8_t address, uint8_t registerType);
-				
-		void writeBurstRegister(uint8_t address, uint8_t* data, uint8_t length);
-		void readBurstRegister(uint8_t* buffer, uint8_t address, uint8_t length);
-		
-		void sendData(CC1101Packet *packet);
-		uint8_t receiveData(CC1101Packet* packet, uint8_t length);
-	
-	private:
-		CC1101( const CC1101 &c );
-		CC1101& operator=( const CC1101 &c );
-		// SPI helper functions
-		void select(void);
-		void deselect(void);
-		
-	protected:
-		uint8_t readRegister(uint8_t address);
-		uint8_t readRegisterMedian3(uint8_t address);
-		uint8_t readRegisterWithSyncProblem(uint8_t address, uint8_t registerType);
-		
-		void reset();
-		
+public:
+	CC1101();
+	~CC1101();
+
+	//spi
+	void spi_waitMiso();
+
+	//cc1101
+	void init();
+
+	uint8_t writeCommand(uint8_t command);
+	void writeRegister(uint8_t address, uint8_t data);
+
+	uint8_t readRegister(uint8_t address, uint8_t registerType);
+
+	void writeBurstRegister(uint8_t address, uint8_t* data, uint8_t length);
+	void readBurstRegister(uint8_t* buffer, uint8_t address, uint8_t length);
+
+	void sendData(CC1101Packet* packet);
+	uint8_t receiveData(CC1101Packet* packet, uint8_t length);
+
+private:
+	CC1101(const CC1101& c);
+	CC1101& operator=(const CC1101& c);
+	// SPI helper functions
+	void select(void);
+	void deselect(void);
+
+protected:
+	uint8_t readRegister(uint8_t address);
+	uint8_t readRegisterMedian3(uint8_t address);
+	uint8_t readRegisterWithSyncProblem(uint8_t address, uint8_t registerType);
+
+	void reset();
+
 }; //CC1101
 
 #endif //__CC1101_H__
