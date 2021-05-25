@@ -280,7 +280,7 @@ void  IthoCC1101::initReceiveMessage()
 
 bool IthoCC1101::checkForNewPacket()
 {
-	if (receiveData(&inMessage, 63) && parseMessageCommand()) // was 42 zonder parseMessageCommand()
+	if (receiveData(&inMessage, 63) && parseMessageCommand())
 	{
 		initReceiveMessage();
 		return true;
