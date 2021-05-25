@@ -247,7 +247,7 @@ void IthoCC1101::initReceive()
 	initReceiveMessage();
 }
 
-void  IthoCC1101::initReceiveMessage(IthoMessageType expectedMessageType)
+void  IthoCC1101::initReceiveMessage()
 {
 	uint8_t marcState;
 
