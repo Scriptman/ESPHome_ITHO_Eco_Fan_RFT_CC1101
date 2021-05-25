@@ -289,7 +289,7 @@ bool IthoCC1101::checkForNewPacket()
 	return false;
 }
 
-void IthoCC1101::parseMessageCommand()
+bool IthoCC1101::parseMessageCommand()
 {
 	messageDecode(&inMessage, &inIthoPacket);
 
