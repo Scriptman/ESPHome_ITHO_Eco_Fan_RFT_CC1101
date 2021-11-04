@@ -6,6 +6,7 @@ from esphome import pins
 from esphome.automation import maybe_simple_id
 from esphome.components import spi
 from esphome.const import CONF_ID
+from yaml_util import ESPHomeDumper
 
 DEPENDENCIES = ['spi']
 
