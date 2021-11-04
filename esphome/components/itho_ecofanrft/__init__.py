@@ -41,6 +41,8 @@ class RFAddress:
         num = ''.join('{:02X}'.format(part) for part in self.parts)
         return RawExpression('0x{}ULL'.format(num))
 
+ESPHomeDumper.add_multi_representer(RFAddress, ESPHomeDumper.represent_stringify)
+
 def rf_address(value):
     value = cv.string_strict(value)
     parts = value.split(':')
