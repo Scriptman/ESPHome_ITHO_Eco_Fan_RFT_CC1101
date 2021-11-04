@@ -2,7 +2,7 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome import automation
-from esphome import pins, core
+from esphome import pins
 from esphome.automation import maybe_simple_id
 from esphome.components import spi
 from esphome.const import CONF_ID
@@ -25,6 +25,22 @@ CONF_ITHO_IRQ_PIN = 'irq_pin'
 CONF_RF_ADDRESS = 'rf_address'
 CONF_PEER_RF_ADDRESS = 'peer_rf_address'
 
+class RFAddress(object):
+    def __init__(self, *parts):
+        if len(parts) != 3:
+            raise ValueError(u"RF Address must consist of 3 items")
+        self.parts = parts
+
+    def __str__(self):
+        return ':'.join('{:02X}'.format(part) for part in self.parts)
+
+    @property
+    def as_hex(self):
+        from esphome.cpp_generator import RawExpression
+
+        num = ''.join('{:02X}'.format(part) for part in self.parts)
+        return RawExpression('0x{}ULL'.format(num))
+
 def rf_address(value):
     value = cv.string_strict(value)
     parts = value.split(':')
@@ -40,7 +56,7 @@ def rf_address(value):
         except ValueError:
             raise Invalid("RF Address parts must be hexadecimal values from 00 to FF")
 
-    return core.RFAddress(*parts_int)
+    return RFAddress(*parts_int)
 
 def validate(config):
     if CONF_PEER_RF_ADDRESS in config:
