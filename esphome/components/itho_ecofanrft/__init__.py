@@ -26,7 +26,7 @@ CONF_RF_ADDRESS = 'rf_address'
 CONF_PEER_RF_ADDRESS = 'peer_rf_address'
 
 def rf_address(value):
-    value = string_strict(value)
+    value = cv.string_strict(value)
     parts = value.split(':')
     if len(parts) != 3:
         raise Invalid("RF Address must consist of 3 : (colon) separated parts")
