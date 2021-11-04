@@ -49,13 +49,17 @@ def validate(config):
 
     return config
 
+SPI_DEVICE_SCHEMA = cv.Schema({
+    cv.GenerateID(CONF_SPI_ID): cv.use_id(SPIComponent),
+    cv.Required(CONF_CS_PIN): pins.gpio_output_pin_schema,
+})
 
 CONFIG_SCHEMA = cv.All(cv.Schema({
     cv.GenerateID(): cv.declare_id(IthoEcoFanRftComponent),
     cv.Required(CONF_ITHO_IRQ_PIN): pins.gpio_input_pin_schema,
     cv.Required(CONF_RF_ADDRESS): rf_address,
     cv.Optional(CONF_PEER_RF_ADDRESS): rf_address,
-}).extend(cv.COMPONENT_SCHEMA).extend(spi.SPI_DEVICE_SCHEMA), validate)
+}).extend(cv.COMPONENT_SCHEMA).extend(SPI_DEVICE_SCHEMA), validate)
 
 
 ECOFAN_ACTION_SCHEMA = maybe_simple_id({
