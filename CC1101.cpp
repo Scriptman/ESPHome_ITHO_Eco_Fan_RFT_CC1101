@@ -1,274 +1,307 @@
-/*
- * Author: Klusjesman, modified bij supersjimmie for Arduino/ESP8266
- */
+#include "esphome/core/log.h"
+#include "cc1101.h"
+#include "cc1101_reg.h"
 
-#include "CC1101.h"
 
- // default constructor
-CC1101::CC1101()
-{
-	SPI.begin();
-#ifdef ESP8266
-	pinMode(SS, OUTPUT);
-#endif
-} //CC1101
+namespace esphome {
+namespace itho_ecofanrft {
 
-// default destructor
-CC1101::~CC1101()
-{
-} //~CC1101
+static const char *TAG = "itho_ecofanrft.cc1101";
 
-/***********************/
-// SPI helper functions select() and deselect()
-inline void CC1101::select(void) {
-	digitalWrite(SS, LOW);
+bool CC1101::init() {
+    uint8_t partnum, version;
+
+    this->reset_();
+
+    partnum = read_register_(CC1101_PARTNUM);
+    version = read_register_(CC1101_VERSION);
+
+    if (version == 0x00 || version == 0xFF) {
+        ESP_LOGE(TAG, "No CC1101 found");
+        return false;
+    }
+
+    this->write_command_strobe(CC1101_SFRX);
+    delayMicroseconds(100);
+    this->write_command_strobe(CC1101_SFTX);
+    delayMicroseconds(100);
+
+    ESP_LOGCONFIG(TAG, "Found CC1101: partnum (%x), version (%x)", partnum, version);
+    return true;
 }
 
-inline void CC1101::deselect(void) {
-	digitalWrite(SS, HIGH);
+void CC1101::send_data(const std::vector<uint8_t> &data) {
+
+    uint8_t marcstate = 0xFF;
+
+    this->flush_txfifo();
+    this->send();
+
+    this->write_burst_register(CC1101_TXFIFO, data);
+
+    while (marcstate != CC1101_MARCSTATE_IDLE && marcstate != CC1101_MARCSTATE_TXFIFO_UNDERFLOW) {
+        yield();
+        marcstate = (this->read_register(CC1101_MARCSTATE) & CC1101_BITS_MARCSTATE);
+    }
+    ESP_LOGV(TAG, "CC1101 done sending: MARCSTATE (%x)", marcstate);
 }
 
-void CC1101::spi_waitMiso()
-{
-	while (digitalRead(MISO) == HIGH) yield();
+std::vector<uint8_t> CC1101::receive_data(const uint8_t max_length) {
+    std::vector <uint8_t> in_bytes;
+    uint8_t in_bytes_available = this->read_register(CC1101_RXBYTES) & CC1101_BITS_BYTES_IN_FIFO;
+
+    in_bytes  = this->read_burst_register(CC1101_RXFIFO, in_bytes_available);
+
+    return in_bytes;
 }
 
-void CC1101::init()
-{
-	reset();
+uint8_t CC1101::write_command_strobe(const uint8_t command) {
+    uint8_t status_byte;
+
+    this->select_();
+    status_byte = this->spi_->transfer_byte(command | CC1101_WRITE_SINGLE);
+    this->deselect_();
+
+    return status_byte;
 }
 
-void CC1101::reset()
-{
-	deselect();
-	delayMicroseconds(5);
-	select();
-	delayMicroseconds(10);
-	deselect();
-	delayMicroseconds(45);
-	select();
+uint8_t CC1101::sidle() {
+    uint8_t marcstate = 0xFF;
 
-	spi_waitMiso();
-	SPI.transfer(CC1101_SRES);
-	delay(10);
-	spi_waitMiso();
-	deselect();
+    ESP_LOGVV(TAG, "CC1101 strobe SIDLE");
+
+    this->write_command_strobe(CC1101_SIDLE);
+
+    while (marcstate != CC1101_MARCSTATE_IDLE) {
+        yield();
+        ESP_LOGVV(TAG, "CC1101 check MARCSTATE for IDLE");
+        marcstate = (this->read_register(CC1101_MARCSTATE) & CC1101_BITS_MARCSTATE);
+    }
+    return marcstate;
 }
 
-uint8_t CC1101::writeCommand(uint8_t command)
-{
-	uint8_t result;
-
-	select();
-	spi_waitMiso();
-	result = SPI.transfer(command);
-	deselect();
-
-	return result;
+void CC1101::flush_rxfifo() {
+    this->sidle();
+    this->write_command_strobe(CC1101_SFRX);
+    delayMicroseconds(100);
 }
 
-void CC1101::writeRegister(uint8_t address, uint8_t data)
-{
-	select();
-	spi_waitMiso();
-	SPI.transfer(address);
-	SPI.transfer(data);
-	deselect();
+void CC1101::flush_txfifo() {
+    this->sidle();
+    this->write_command_strobe(CC1101_SFTX);
+    delayMicroseconds(100);
 }
 
-uint8_t CC1101::readRegister(uint8_t address)
-{
-	uint8_t val;
+uint8_t CC1101::receive() {
+    uint8_t marcstate = 0xFF;
+    uint8_t counter = 0;
 
-	select();
-	spi_waitMiso();
-	SPI.transfer(address);
-	val = SPI.transfer(0);
-	deselect();
+    ESP_LOGVV(TAG, "CC1101 receive");
 
-	return val;
+    //this->sidle();
+    //this->write_command_strobe(CC1101_SFRX);
+    //delayMicroseconds(100);
+
+    this->sidle();
+    this->write_command_strobe(CC1101_SRX);
+
+    while (marcstate != CC1101_MARCSTATE_RX) {
+        yield();
+        marcstate = (this->read_register(CC1101_MARCSTATE) & CC1101_BITS_MARCSTATE);
+
+        ESP_LOGVV(TAG, "CC1101 check MARCSTATE for RX (current state %02X)", marcstate);
+
+        if (marcstate == CC1101_MARCSTATE_RXFIFO_OVERFLOW) {
+            this->write_command_strobe(CC1101_SFRX);
+        }
+
+        if (++counter > 200) {
+            ESP_LOGW(TAG, "CC1101 stuck, retry SRX strobe");
+            this->sidle();
+            this->write_command_strobe(CC1101_SFRX);
+            delayMicroseconds(100);
+            this->write_command_strobe(CC1101_SRX);
+            counter = 0;
+        }
+
+    }
+    return marcstate;
 }
 
-uint8_t CC1101::readRegisterMedian3(uint8_t address)
-{
-	uint8_t val, val1, val2, val3;
+uint8_t CC1101::send() {
+    uint8_t marcstate = 0xFF;
+    uint8_t counter = 0;
 
-	select();
-	spi_waitMiso();
-	SPI.transfer(address);
-	val1 = SPI.transfer(0);
-	SPI.transfer(address);
-	val2 = SPI.transfer(0);
-	SPI.transfer(address);
-	val3 = SPI.transfer(0);
-	deselect();
-	// reverse sort (largest in val1) because this is te expected order for TX_BUFFER
-	if (val3 > val2) { val = val3; val3 = val2; val2 = val; } //Swap(val3,val2)
-	if (val2 > val1) { val = val2; val2 = val1, val1 = val; } //Swap(val2,val1)
-	if (val3 > val2) { val = val3; val3 = val2, val2 = val; } //Swap(val3,val2)
+    ESP_LOGVV(TAG, "CC1101 send");
 
-	return val2;
+    //this->sidle();
+    //this->write_command_strobe(CC1101_SFRX);
+    //delayMicroseconds(100);
+
+    this->sidle();
+    this->write_command_strobe(CC1101_STX);
+
+    while (marcstate != CC1101_MARCSTATE_TX) {
+        yield();
+        marcstate = (this->read_register(CC1101_MARCSTATE) & CC1101_BITS_MARCSTATE);
+
+        ESP_LOGVV(TAG, "CC1101 check MARCSTATE for TX (current state %02X)", marcstate);
+
+        if (++counter > 200) {
+            ESP_LOGW(TAG, "CC1101 stuck, retry STX strobe");
+            this->sidle();
+            this->write_command_strobe(CC1101_SFTX);
+            delayMicroseconds(100);
+            this->write_command_strobe(CC1101_STX);
+            counter = 0;
+        }
+
+    }
+    return marcstate;
 }
 
-/* Known SPI/26MHz synchronization bug (see CC1101 errata)
-This issue affects the following registers: SPI status byte (fields STATE and FIFO_BYTES_AVAILABLE),
-FREQEST or RSSI while the receiver is active, MARCSTATE at any time other than an IDLE radio state,
-RXBYTES when receiving or TXBYTES when transmitting, and WORTIME1/WORTIME0 at any time.*/
-//uint8_t CC1101::readRegisterWithSyncProblem(uint8_t address, uint8_t registerType)
-uint8_t /* ICACHE_RAM_ATTR */ CC1101::readRegisterWithSyncProblem(uint8_t address, uint8_t registerType)
-{
-	uint8_t value1, value2;
 
-	value1 = readRegister(address | registerType);
 
-	//if two consecutive reads gives us the same result then we know we are ok
-	do
-	{
-		value2 = value1;
-		value1 = readRegister(address | registerType);
-	} 	while (value1 != value2);
-
-	return value1;
+void CC1101::write_register(const uint8_t address, const uint8_t data) {
+    this->select_();
+    this->spi_->write_byte(address | CC1101_WRITE_SINGLE);
+    this->spi_->write_byte(data);
+    this->deselect_();
 }
 
-//registerType = CC1101_CONFIG_REGISTER or CC1101_STATUS_REGISTER
-uint8_t CC1101::readRegister(uint8_t address, uint8_t registerType)
-{
-	switch (address)
-	{
-	case CC1101_FREQEST:
-	case CC1101_MARCSTATE:
-	case CC1101_RXBYTES:
-	case CC1101_TXBYTES:
-	case CC1101_WORTIME1:
-	case CC1101_WORTIME0:
-		return readRegisterWithSyncProblem(address, registerType);
+uint8_t CC1101::read_register(const uint8_t address) {
 
-	default:
-		return readRegister(address | registerType);
-	}
+    switch (address) {
+        case CC1101_FREQEST:
+        case CC1101_MARCSTATE:
+        case CC1101_RXBYTES:
+        case CC1101_TXBYTES:
+        case CC1101_WORTIME0:
+        case CC1101_WORTIME1:
+              return this->read_register_with_sync_problem_(address);
+    }
+    return this->read_register_(address);
 }
 
-void CC1101::writeBurstRegister(uint8_t address, uint8_t* data, uint8_t length)
-{
-	uint8_t i;
+void CC1101::write_burst_register(const uint8_t address, const std::vector<uint8_t> &data) {
 
-	select();
-	spi_waitMiso();
-	SPI.transfer(address | CC1101_WRITE_BURST);
-	for (i = 0; i < length; i++) {
-		SPI.transfer(data[i]);
-	}
-	deselect();
+    if (address >= 0x00 && address <= 0x2E) {
+        // Normal config registers
+        if (address + data.size() > 0x2F) {
+            ESP_LOGW(TAG, "Burst write requested beyond last register");
+        }
+    } else if (address == 0x3E) {
+        // PA table registers
+        if (data.size() > 8) {
+            ESP_LOGW(TAG, "Burst write wraps counter in PATABLE register");
+        }
+    } else if (address != 0x3F) {
+        ESP_LOGE(TAG, "Invalid register for burst write (%x)", address);
+        return;
+    }
+
+    this->select_();
+    this->spi_->write_byte(address | CC1101_WRITE_BURST);
+    for (uint8_t out_byte : data) {
+        this->spi_->write_byte(out_byte);
+    }
+    this->deselect_();
+
 }
 
-void CC1101::readBurstRegister(uint8_t* buffer, uint8_t address, uint8_t length)
-{
-	uint8_t i;
+std::vector<uint8_t> CC1101::read_burst_register(const uint8_t address, const uint8_t max_length) {
+    uint8_t count, i;
+    std::vector <uint8_t> in_bytes;
 
-	select();
-	spi_waitMiso();
-	SPI.transfer(address | CC1101_READ_BURST);
+    if (address >= 0x00 && address <= 0x2E) {
+        // Normal config registers
+        if (address + max_length > 0x2F) {
+            ESP_LOGW(TAG, "Burst read requested beyond last register");
+            count = 0x2F - address;
+        } else {
+            count = max_length;
+        }
+    } else if (address == 0x3E) {
+        // PA table registers
+        count = min(max_length, (uint8_t) 8);
+    } else if (address == 0x3F) {
+        // FIFO data
+        count = max_length;
+    } else {
+        ESP_LOGE(TAG, "Invalid register for burst read (%x)", address);
+        return in_bytes;
+    }
 
-	for (i = 0; i < length; i++) {
-		buffer[i] = SPI.transfer(0x00);
-	}
+    this->select_();
+    this->spi_->write_byte(address | CC1101_READ_BURST);
+    for (i = 0; i < count; i++) {
+        in_bytes.push_back(this->spi_->transfer_byte(0x00));
+    }
+    this->deselect_();
 
-	deselect();
+    return in_bytes;
 }
 
-//wait for fixed length in rx fifo
-uint8_t CC1101::receiveData(CC1101Packet* packet, uint8_t length)
-{
-	uint8_t rxBytes = readRegisterWithSyncProblem(CC1101_RXBYTES, CC1101_STATUS_REGISTER);
-	rxBytes = rxBytes & CC1101_BITS_RX_BYTES_IN_FIFO;
+uint8_t CC1101::read_register_(const uint8_t address) {
+    uint8_t in_byte;
 
-	//check for rx fifo overflow
-	if ((readRegisterWithSyncProblem(CC1101_MARCSTATE, CC1101_STATUS_REGISTER) & CC1101_BITS_MARCSTATE) == CC1101_MARCSTATE_RXFIFO_OVERFLOW)
-	{
-		writeCommand(CC1101_SIDLE);	//idle
-		writeCommand(CC1101_SFRX); //flush RX buffer
-		writeCommand(CC1101_SRX); //switch to RX state	
-	}
-	else if (rxBytes == length)
-	{
-		readBurstRegister(packet->data, CC1101_RXFIFO, rxBytes);
+    this->select_();
+    if (address >= 0x30 && address <= 0x3D) {
+      this->spi_->write_byte(address | CC1101_READ_BURST);
+    } else {
+      this->spi_->write_byte(address | CC1101_READ_SINGLE);
+    }
+    in_byte = this->spi_->transfer_byte(0x00);
+    this->deselect_();
 
-		//continue RX
-		writeCommand(CC1101_SIDLE);	//idle		
-		writeCommand(CC1101_SFRX); //flush RX buffer
-		writeCommand(CC1101_SRX); //switch to RX state	
-
-		packet->length = rxBytes;
-	}
-	else
-	{
-		//empty fifo
-		packet->length = 0;
-		writeCommand(CC1101_SIDLE); //idle    
-		writeCommand(CC1101_SFRX); //flush RX buffer
-		writeCommand(CC1101_SRX); //switch to RX state     		
-	}
-
-	return packet->length;
+    return in_byte;
 }
 
-//This function is able to send packets bigger then the FIFO size.
-void CC1101::sendData(CC1101Packet* packet)
-{
-	uint8_t index = 0;
-	uint8_t txStatus, MarcState;
-	uint8_t length;
+uint8_t CC1101::read_register_with_sync_problem_(const uint8_t address) {
+    uint8_t in_byte1, in_byte2;
 
-	writeCommand(CC1101_SIDLE);		//idle
+    in_byte1 = this->read_register_(address);
 
-	txStatus = readRegisterWithSyncProblem(CC1101_TXBYTES, CC1101_STATUS_REGISTER);
+    do {
+        in_byte2 = in_byte1;
+        in_byte1 = this->read_register_(address);
+    } while (in_byte1 != in_byte2);
 
-	//clear TX fifo if needed
-	if (txStatus & CC1101_BITS_TX_FIFO_UNDERFLOW)
-	{
-		writeCommand(CC1101_SIDLE);	//idle
-		writeCommand(CC1101_SFTX);	//flush TX buffer
-	}
-
-	writeCommand(CC1101_SIDLE);		//idle	
-
-	//determine how many bytes to send
-	length = (packet->length <= CC1101_DATA_LEN ? packet->length : CC1101_DATA_LEN);
-
-	writeBurstRegister(CC1101_TXFIFO, packet->data, length);
-
-	writeCommand(CC1101_SIDLE);
-	//start sending packet
-	writeCommand(CC1101_STX);
-
-	//continue sending when packet is bigger than 64 bytes
-	if (packet->length > CC1101_DATA_LEN)
-	{
-		index += length;
-
-		//loop until all bytes are transmitted
-		while (index < packet->length)
-		{
-			//check if there is free space in the fifo
-			while ((txStatus = (readRegisterMedian3(CC1101_TXBYTES | CC1101_STATUS_REGISTER) & CC1101_BITS_RX_BYTES_IN_FIFO)) > (CC1101_DATA_LEN - 2));
-
-			//calculate how many bytes we can send
-			length = (CC1101_DATA_LEN - txStatus);
-			length = ((packet->length - index) < length ? (packet->length - index) : length);
-
-			//send some more bytes
-			for (int i = 0; i < length; i++)
-				writeRegister(CC1101_TXFIFO, packet->data[index + i]);
-
-			index += length;
-		}
-	}
-
-	//wait until transmission is finished (TXOFF_MODE is expected to be set to 0/IDLE or TXFIFO_UNDERFLOW)
-	do
-	{
-		MarcState = (readRegisterWithSyncProblem(CC1101_MARCSTATE, CC1101_STATUS_REGISTER) & CC1101_BITS_MARCSTATE);
-		//		if (MarcState == CC1101_MARCSTATE_TXFIFO_UNDERFLOW) Serial.print(F("TXFIFO_UNDERFLOW occured in sendData() \n"));
-	}   	while ((MarcState != CC1101_MARCSTATE_IDLE) && (MarcState != CC1101_MARCSTATE_TXFIFO_UNDERFLOW));
+    return in_byte1;
 }
+
+void CC1101::reset_(bool power_on_reset) {
+
+  if (power_on_reset) {
+    this->cs_->digital_write(true);
+    delayMicroseconds(10);
+    this->cs_->digital_write(false);
+    delayMicroseconds(10);
+    this->cs_->digital_write(true);
+    delayMicroseconds(40);
+  }
+
+  this->select_();
+  this->spi_->write_byte(CC1101_SRES);
+  this->deselect_();
+
+  delay(1);
+
+  // In IDLE state
+}
+
+
+int16_t CC1101::read_rssi() {
+    uint8_t raw_rssi = this->read_register(CC1101_RSSI);
+    int16_t rssi;
+    if (raw_rssi >= 128) {
+        rssi = (raw_rssi - 256)/2 - 74;
+    } else {
+        rssi = (raw_rssi)/2 - 74;
+    }
+    return rssi;
+}
+
+
+} // namespace itho_ecofanrft
+} // namespace esphome
