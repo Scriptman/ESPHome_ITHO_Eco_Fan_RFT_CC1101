@@ -25,7 +25,7 @@ CONF_ITHO_IRQ_PIN = 'irq_pin'
 CONF_RF_ADDRESS = 'rf_address'
 CONF_PEER_RF_ADDRESS = 'peer_rf_address'
 
-class RFAddress(object):
+class RFAddress:
     def __init__(self, *parts):
         if len(parts) != 3:
             raise ValueError(u"RF Address must consist of 3 items")
