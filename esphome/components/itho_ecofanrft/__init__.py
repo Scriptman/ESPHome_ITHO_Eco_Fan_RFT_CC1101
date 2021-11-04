@@ -5,7 +5,7 @@ from esphome import automation
 from esphome import pins
 from esphome.automation import maybe_simple_id
 from esphome.components import spi
-from esphome.const import CONF_ID, CONF_SPI_ID, CONF_CS_PIN
+from esphome.const import CONF_ID
 
 DEPENDENCIES = ['spi']
 
@@ -14,7 +14,6 @@ CONF_ITHO_ECOFANRFT_ID = 'itho_ecofanrft_id'
 itho_ecofanrft_ns = cg.esphome_ns.namespace('itho_ecofanrft')
 IthoEcoFanRftComponent = itho_ecofanrft_ns.class_('IthoEcoFanRftComponent',
                                                   cg.Component, spi.SPIDevice)
-SPIComponent = spi_ns.class_('SPIComponent', cg.Component)
 
 # Actions
 JoinAction = itho_ecofanrft_ns.class_('JoinAction', automation.Action)
@@ -50,17 +49,12 @@ def validate(config):
 
     return config
 
-SPI_DEVICE_SCHEMA = cv.Schema({
-    cv.GenerateID(CONF_SPI_ID): cv.use_id(SPIComponent),
-    cv.Required(CONF_CS_PIN): pins.gpio_output_pin_schema,
-})
-
 CONFIG_SCHEMA = cv.All(cv.Schema({
     cv.GenerateID(): cv.declare_id(IthoEcoFanRftComponent),
     cv.Required(CONF_ITHO_IRQ_PIN): pins.gpio_input_pin_schema,
     cv.Required(CONF_RF_ADDRESS): rf_address,
     cv.Optional(CONF_PEER_RF_ADDRESS): rf_address,
-}).extend(cv.COMPONENT_SCHEMA).extend(SPI_DEVICE_SCHEMA), validate)
+}).extend(cv.COMPONENT_SCHEMA).extend(spi.spi_device_schema), validate)
 
 
 ECOFAN_ACTION_SCHEMA = maybe_simple_id({
