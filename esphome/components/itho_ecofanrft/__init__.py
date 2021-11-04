@@ -25,6 +25,22 @@ CONF_ITHO_IRQ_PIN = 'irq_pin'
 CONF_RF_ADDRESS = 'rf_address'
 CONF_PEER_RF_ADDRESS = 'peer_rf_address'
 
+def rf_address(value):
+    value = string_strict(value)
+    parts = value.split(':')
+    if len(parts) != 3:
+        raise Invalid("RF Address must consist of 3 : (colon) separated parts")
+    parts_int = []
+
+    if any(len(part) != 2 for part in parts):
+        raise Invalid("RF Address must be format XX:XX:XX")
+    for part in parts:
+        try:
+            parts_int.append(int(part, 16))
+        except ValueError:
+            raise Invalid("RF Address parts must be hexadecimal values from 00 to FF")
+
+    return core.RFAddress(*parts_int)
 
 def validate(config):
     if CONF_PEER_RF_ADDRESS in config:
@@ -37,8 +53,8 @@ def validate(config):
 CONFIG_SCHEMA = cv.All(cv.Schema({
     cv.GenerateID(): cv.declare_id(IthoEcoFanRftComponent),
     cv.Required(CONF_ITHO_IRQ_PIN): pins.gpio_input_pin_schema,
-    cv.Required(CONF_RF_ADDRESS): cv.rf_address,
-    cv.Optional(CONF_PEER_RF_ADDRESS): cv.rf_address,
+    cv.Required(CONF_RF_ADDRESS): rf_address,
+    cv.Optional(CONF_PEER_RF_ADDRESS): rf_address,
 }).extend(cv.COMPONENT_SCHEMA).extend(spi.SPI_DEVICE_SCHEMA), validate)
 
 
