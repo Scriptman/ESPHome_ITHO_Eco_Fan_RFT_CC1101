@@ -5,7 +5,7 @@ from esphome import automation
 from esphome import pins
 from esphome.automation import maybe_simple_id
 from esphome.components import spi
-from esphome.const import CONF_ID
+from esphome.const import CONF_ID, CONF_SPI_ID, CONF_CS_PIN
 
 DEPENDENCIES = ['spi']
 
@@ -14,6 +14,7 @@ CONF_ITHO_ECOFANRFT_ID = 'itho_ecofanrft_id'
 itho_ecofanrft_ns = cg.esphome_ns.namespace('itho_ecofanrft')
 IthoEcoFanRftComponent = itho_ecofanrft_ns.class_('IthoEcoFanRftComponent',
                                                   cg.Component, spi.SPIDevice)
+SPIComponent = spi_ns.class_('SPIComponent', cg.Component)
 
 # Actions
 JoinAction = itho_ecofanrft_ns.class_('JoinAction', automation.Action)
